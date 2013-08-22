@@ -131,14 +131,15 @@ class SimpleHttpRouter extends Object
 			// The delegate should have full control over this response, so we're
 			// refraining from spitting an HTTP 404 header down the wire here.
 			$method = 'http404';
+		
+			if (!$this->delegateRespondsToSelector($method)) {
+				header('HTTP/1.1 500 Internal Server Error');
+				flush();
+				throw new \Exception("No available method to serve the requested URL.");
+				exit;
+			}
 		}
 		
-		if (!$this->delegateRespondsToSelector($method)) {
-			header('HTTP/1.1 500 Internal Server Error');
-			flush();
-			exit;
-		} else {
-			$this->fireDelegateMethod($method);
-		}
+		$this->fireDelegateMethod($method);
 	}
 }
