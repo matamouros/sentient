@@ -56,7 +56,7 @@ class Config
 
 	protected $overrideDir = NULL;
 
-	static protected $config = array();
+	protected $config = array();
 
 
 	public function __construct($baseDir, $overrideDir = NULL)
@@ -107,7 +107,7 @@ class Config
 	{
 		$this->_loadConfig($this->baseDir);
 		$this->_loadConfig($this->overrideDir);
-		self::$config = $this->_flattenArray(self::$config);
+		//$this->config = $this->_flattenArray($this->config);
 	}
 
 	/**
@@ -143,7 +143,7 @@ class Config
 			// Also, in the worst case scenario of all JSON files being empty,
 			// $configArray will never be an array (see above)
 			if (is_array($configArray) && !empty($configArray)) {
-				self::$config = array_replace_recursive($buf, $configArray);
+				$this->config = array_replace_recursive($buf, $configArray);
 			}
 		}
 	}
@@ -155,7 +155,7 @@ class Config
 	 */
 	public function init()
 	{
-		if (empty(self::$config)) {
+		if (empty($this->config)) {
 			$this->_load();
 		}
 	}
@@ -184,10 +184,20 @@ class Config
 	 */
 	public function valueForKey($key, $defaultValue = NULL)
 	{
-		if (isset(self::$config[$key])) {
-			return self::$config[$key];
+		$keyParts = explode('.', $key);
+		//
+		// All of the following because there is really no way of dynamically access
+		// an array of unknown multilevel depthness:
+		// http://thehighcastle.com/blog/38/php-dynamic-access-array-elements-arbitrary-nesting-depth
+		//
+		$c = count($keyParts);
+		$ret = $this->config;
+		for ($i = 0; $i < $c; $i++) {
+			if (!isset($ret[$keyParts[$i]])) {
+				return $defaultValue;
+			}
+			$ret = $ret[$keyParts[$i]];
 		}
-
-		return $defaultValue;
+		return $ret;
 	}
 }
