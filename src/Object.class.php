@@ -208,7 +208,11 @@ class Object
 	{
 		// method_exists ensures that __call() of delegate is not considered on the check (contrary
 		// to is_callable(). @see http://www.php.net/manual/en/function.method-exists.php#101507)
-		return method_exists($this, $selector);
+		//return method_exists($this, $selector);
+
+		// matamouros 2013.08.22: Apparently method_exists() disregards visibility qualifier of
+		// methods, thus rendering private methods as apparently callable, when they are not.
+		return is_callable(array($this, $selector));
 	}
 
 	/**
@@ -235,7 +239,21 @@ class Object
 	protected function fireDelegateMethod($method, $args = NULL)
 	{
 		if ($this->delegateRespondsToSelector($method)) {
-			return $this->delegate->$method($args, $this);
+			// Ensure something is always passed onto the delegate, even if
+			// $args doesn't exist or is not an array.
+			$params = array($this);
+			if (!empty($args)) {
+				if (!is_array($args)) {
+					$args = array($args);
+				}
+				$params = array_merge($params, $args);
+			}
+			
+			return call_user_func_array(array($this->delegate, $method), $params);
+			// Using call_user_func_array ensures that the delegate method is called
+			// with $this as first parameter and the other args as proper parameters
+			// in the function call, as opposed to just a single parameter as an array.
+			//return $this->delegate->$method($this, $args);
 		}
 	}
 
