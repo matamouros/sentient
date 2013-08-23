@@ -31,24 +31,63 @@
 namespace Sentient;
 
 /**
- * The SimpleHttpRouter is a very simple and bare basics Http router for an
- * application. It directly maps URLs (actions) into methods on the controller
- * that you provide as a delegate. Every parameter needs to be accessed by the
- * delegate itself, either via GET or POST vars. It is bare basics in the sense
- * that you basically just get to have one single controller for defining all
- * the available actions on your app. Should you require a more complex
- * structure of controllers for your actions, say for modularity and code reuse
- * reasons and because your app's scale so justifies it, you should instead use
- * AdvancedHttpRouter.
+ * The AdvancedHttpRouter is a more complex version of the SimpleHttpRouter,
+ * offering the possibility of specifying exactly what routes there are and
+ * their respective constraints, what controllers are associated with each
+ * one and also extracting parameters from them.
  *
- * Mapping rules of SimpleHttpRouter:
+ * Routes are evaluated against a request URL by the order in which they are
+ * added. Once a match is found, the flow is passed onto its controller, and
+ * the route evaluation stops there. The AdvancedHttpRouter instance is
+ * passed along to the used controller for convenience.
+ * 
+ * USAGE EXAMPLE #1:
+ *     $router = new Sentient\AdvancedHttpRouter();
+ *     $router->addRoute("/^\\/project\\/(\\w*)\\/(\\w*)/", "ProjectHttpController", "->$1", "$2");
+ *     $router->addRoute("/^\\/$/", "HomeHttpController", "->index");
+ *     $router->init();
+ *     $router->run();
  *
- *   URI          => method name  => template filename:
+ * USAGE EXAMPLE #2 (using Config for convenience):
+ *     $config = new Sentient\Config('../config/');
+ *     $config->init();
+ *     $routes = $config->valueForKey('routes');
+ *     $router = new Sentient\AdvancedHttpRouter();
+ *     foreach ($routes as $route) {
+ *         $router->addRoute($route[0], $route[1], $route[2], (isset($route[3]) ? $route[3] : NULL));
+ *     }
+ *     $router->init();
+ *     $router->run();
  *
- * . /foo         => foo()        => foo.tpl         (default section)
- * . /foo-bar     => fooBar()     => foo-bar.tpl     (default section)
- * . /foo/bar     => foo_bar()    => foo/bar.tpl     (foo section)
- * . /foo/foo-bar => foo_fooBar() => foo/foo-bar.tpl (foo section)
+ * In EXAMPLE #2 Config is used for convenience, so that the routes and their
+ * respective configurations lie in a proper config file. Notice that whatever
+ * structure is used for this config file is completely up to the programmer,
+ * so long that the AdvancedHttpRouter API is respected, namely in using the
+ * addRoute() method for adding the routes.
+ *
+ * On addRoute(), the actual format of each of the parameters must however
+ * respect the following:
+ * 
+ * $url          PCRE compatible regular expression, exactly like it is used with
+ *               preg_match, for instance.
+ * 
+ * $controller   The name of the controller that will be invoked to handle the
+ *               route. This controller should be autoloadable.
+ *
+ * $method       The method name to call on the controller. If static, it should
+ *               be preceeded by "::", e.g., "::index". If non-static, it can
+ *               be preceeded by "->", e.g., "->index", although it is not
+ *               mandatory.
+ *
+ * $args         Arguments to pass to the called method, separated by commas,
+ *               e.g., "foo, bar, $2" (these are three arguments that will be
+ *               passed onto the called method as the 2nd, 3rd and 4th parameters
+ *               respectively, and the AdvancedHttpRouter instance will be the
+ *               first).
+ *
+ * Note that on the controller, method and args, you are free to use PCRE style
+ * substitution placeholders, e.g., $1, $2, etc. These will be replaced by
+ * whatever gets captured in the url.
  *
  * @package     Sentient
  * @author      Pedro Mata-Mouros Fonseca <pedro.matamouros@gmail.com>
@@ -71,14 +110,14 @@ class AdvancedHttpRouter extends Object
 	public function __construct()
 	{
 		$this->controller = NULL;
-		$this->method = NULL; // Default method that every provided delegate should implement
+		$this->method = NULL;
 		$this->args = array();
 		$this->url = NULL;
 		$this->routes = array();
 	}
 
 	/**
-	 * Private utility method for loading all the URL parts.
+	 * Evaluate the current request URL and resolve the controller that will handle it.
 	 */
 	private function _load()
 	{
@@ -112,11 +151,28 @@ class AdvancedHttpRouter extends Object
 				break;
 			}
 		}
-		// TODO: if no route found, 500!!
 	}
 
 	/**
+	 * Allows a route to be added, along with its respective controller, method
+	 * and optional arguments.
 	 *
+	 * @param string $url         PCRE compatible regular expression, exactly like it is used with
+	 *                            preg_match, for instance.
+	 *  
+	 * @param string $controller  The name of the controller that will be invoked to handle the
+	 *                            route. This controller should be autoloadable.
+	 *
+	 * @param string $method      The method name to call on the controller. If static, it should
+	 *                            be preceeded by "::", e.g., "::index". If non-static, it can
+	 *                            be preceeded by "->", e.g., "->index", although it is not
+	 *                            mandatory.
+	 *
+	 * @param array $args         Arguments to pass to the called method, separated by commas,
+	 *                            e.g., "foo, bar, $2" (these are three arguments that will be
+	 *                            passed onto the called method as the 2nd, 3rd and 4th parameters
+	 *                            respectively, and the AdvancedHttpRouter instance will be the
+	 *                            first).
 	 */
 	public function addRoute($url, $controller, $method, $args = array())
 	{
@@ -129,24 +185,20 @@ class AdvancedHttpRouter extends Object
 	}
 
 	/**
-	 * Part of the initialisation process of SimpleHttpRouter, call this right
+	 * Part of the initialisation process of AdvancedHttpRouter, call this right
 	 * after the constructor to make sure everything is setup and bootstrapped
 	 * before calling run().
 	 */
 	public function init()
 	{
-		// Load all the 
 		$this->_load();
 	}
 
 	/**
-	 * This method triggers the flow for the application, dispatching the request.
-	 * It relies on some sort of previously added HttpController delegate, that
-	 * will handle dispatches for the URL methods extracted here. Should it fail
-	 * implementing any, the SimpleHttpRouter will trigger the delegate's http404
-	 * method, which it should be responsible for properly implementing, and if
-	 * that also fails, the SimpleHttpRouter will take the reins and throw a 500
-	 * back to the client.
+	 * This method dispatches the request to the resolved controller. If the
+	 * resolved method for the resolved controller is not callable, it will
+	 * degrade to call an http404 method, and if that is not callable too, it
+	 * will degrade to reply back an HTTP 500 to the client.
 	 */
 	public function run()
 	{
