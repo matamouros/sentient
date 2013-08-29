@@ -97,6 +97,49 @@ class Config
 		}
 		return $res;
 	}
+	
+	/**
+	 * Private utility method for expanding variables in configuration
+	 * directives' values. It traverses the whole configuration structure
+	 * searching for values that have variables of the type ${VAR} inside,
+	 * and tries to expand them, refering to whatever is already loaded in
+	 * the configuration. In case it can't resolve a variable, it is left
+	 * untouched.
+	 *
+	 * This is a recursive function.
+	 *
+	 * @param  array   $array    Should not be used, except by the method's
+	 *         own recursiveness.
+	 * @param  string  $backKey  Should not be used, except by the method's
+	 *         own recursiveness.
+	 */
+	private function _expandVarsInValues(array $array = NULL, $backKey = '')
+	{
+		if (!is_array($array)) {
+			$array = $this->config;
+		}
+		foreach ($array as $key => $value) {
+			$iniKey = '';
+			$iniKey .= (empty($backKey) ? '' : $backKey . '.') . $key;
+			if (is_array($value)) {
+				$this->_expandVarsInValues($value, $iniKey);
+			} else {
+				// This strpos() is inexpensive compared to doing the preg_replace_callback
+				// on every configuration directive...
+				if (strpos($value, '${') !== FALSE) {
+					// The following is some blackmagic that basically makes sure
+					// multiple occurrences of ${var} get replaced by their
+					// actual value.
+					// @see http://stackoverflow.com/a/4643467/315285
+					if ($value = preg_replace_callback('/(\$\{((?:[^\$]|\$[^{])*)\})/', function ($matches) {
+						return $this->valueForKey($matches[2], $matches[1]);
+					}, $value)) {
+						$this->_setValueForKey($iniKey, $value);
+					}
+				}
+			}
+		}
+	}
 
 	/**
 	 * Private method that loads the configuration files on the general dir
@@ -107,7 +150,10 @@ class Config
 	{
 		$this->_loadConfig($this->baseDir);
 		$this->_loadConfig($this->overrideDir);
-		//$this->config = $this->_flattenArray($this->config);
+		
+		// All loadConfig() should happen before expanding vars, so that there's
+		// a chance for all configuration to be known.
+		$this->_expandVarsInValues();
 	}
 
 	/**
@@ -146,6 +192,38 @@ class Config
 				$this->config = array_replace_recursive($buf, $configArray);
 			}
 		}
+	}
+	
+	/**
+	 * Setter for a given key passed in in dot notation. It explodes this given
+	 * key and tries to traverse the configuration structure until it finds the
+	 * relevant configuration directive.
+	 *
+	 * @param  string  $key           The configuration key to set.
+	 * @param  mixed   $value         The value to set the configuration directive to.
+	 *
+	 * @return boolean                Either TRUE or FALSE according to successful
+	 *	       or insuccessful.
+	 */
+	private function _setValueForKey($key, $value)
+	{
+		$keyParts = explode('.', $key);
+		//
+		// All of the following because there is really no way of dynamically access
+		// an array of unknown multilevel depthness:
+		// http://thehighcastle.com/blog/38/php-dynamic-access-array-elements-arbitrary-nesting-depth
+		//
+		$c = count($keyParts);
+		$ret =& $this->config;
+		for ($i = 0; $i < $c; $i++) {
+			if (!isset($ret[$keyParts[$i]])) {
+				// If the key is bogus, get out now.
+				return FALSE;
+			}
+			$ret =& $ret[$keyParts[$i]];
+		}
+		$ret = $value;
+		return TRUE;
 	}
 
 	/**
@@ -199,5 +277,6 @@ class Config
 			$ret = $ret[$keyParts[$i]];
 		}
 		return $ret;
+		// TODO: If the key doesn't exist, we always return the full config, which is wrong... What should we do? Return NULL?
 	}
 }
