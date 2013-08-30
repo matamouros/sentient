@@ -21,20 +21,20 @@ Some features
 
  * Obj-C style automagic setter, e.g., `$foo->setBar($bar)`. This automagic setter
    notifies all registered observers that this property has changed value (only
-   if it actually changed!), using the Obj-C style `willChangeValueForKey` method and
-   `didChangeValueForKey`.
+   if it actually changed!), using the Obj-C style `willChangeValueForKey()` method and
+   `didChangeValueForKey()`.
 
- * `isBar` and `hasBar` style automagic getters for each property, that always return
-   a boolean.
+ * `isBar()` and `hasBar()` style automagic getters for each property, that always
+   return a boolean.
 
- * `emptyBar` style automagic getter, that checks if the `bar` attribute is empty.
+ * `emptyBar()` style automagic getter, that checks if the `bar` attribute is empty.
 
  * Support for observers, for watching a specific property. These registered
    observers get notified whenever the property they are watching changes. Observer
    objects (which are also derived from the Object class) must implement
-   `observeValueForKeyPath`, which is what will be called by the observed object.
+   `observeValueForKeyPath()`, which is what will be called by the observed object.
 
- * Obj-C style generic `setValueForKey` and `valueForKey` as setter and getter,
+ * Obj-C style generic `setValueForKey()` and `valueForKey()` as setter and getter,
    besides the automagic ones.
 
  * Support for delegates. Delegates are an easy way to provide hooks on a class'
@@ -82,6 +82,19 @@ Some features
  * If you require more customisation for your routes and controllers, you have the
    option of using the advanced routing, which allows you to finely specify different
    combinations of controllers, methods and parameters for every route you register.
+
+   The code required for this could be as easy as:
+
+   ```
+   $router = new Sentient\AdvancedHttpRouter();
+   $router->addRoute("/^\\/project\\/(\\w*)\\/(\\w*)/", "ProjectHttpController", "->$1", "$2");
+   $router->addRoute("/^\\/$/", "HomeHttpController", "->index");
+   $router->init();
+   $router->run();
+   ```
+
+   Note that you could also have the actual routes off-code in a JSON configuration
+   file, that you would feed in a loop into `addRoute()`.
 
 
 Requirements
