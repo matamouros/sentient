@@ -9,6 +9,18 @@ out of its way to not bind you to pre-determined schemes of file and class
 naming and application structure.
 
 
+Installation
+------------
+
+To start using Sentient, place this repository inside a directory named Sentient
+inside, e.g., the lib directory of your app. You just then need to include
+Sentient's bootstrap file and you are ready to go:
+
+```
+include '../lib/sentient/bootstrap.php';
+```
+
+
 Some features
 -------------
 
@@ -65,7 +77,7 @@ Some features
 
    ```
    $router = new Sentient\SimpleHttpRouter();
-   $router->setDelegate(new HttpController());
+   $router->setDelegate(new MyHttpController());
    $router->init();
    $router->run();
    ```
