@@ -5,5 +5,8 @@
 			"name": "Pedro Mata-Mouros",
 			"email": "pedro.matamouros@gmail.com"
 		}
-	]
+	],
+    "autoload": {
+        "psr-4": {"Sentient\\": "src/"}
+    }
 }
