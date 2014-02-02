@@ -61,12 +61,10 @@ class Config
 
 	public function __construct($baseDir, $overrideDir = NULL)
 	{
-		if (!($this->baseDir = realpath($baseDir))) {
-			throw new \Exception("Invalid dir specified {$baseDir}");
-		}
-
-		if (!empty($overrideDir) && !($this->overrideDir = realpath($this->baseDir . DIRECTORY_SEPARATOR . $overrideDir))) {
-			throw new \Exception("Invalid dir specified {$overrideDir}");
+		$this->setBaseDir($baseDir);
+		
+		if (!empty($overrideDir)) {
+			$this->setOverrideDir($overrideDir);
 		}
 	}
 
@@ -245,6 +243,20 @@ class Config
 	public function reload()
 	{
 		$this->_load();
+	}
+
+	public function setBaseDir($baseDir)
+	{
+		if (!($this->baseDir = realpath($baseDir))) {
+			throw new \Exception("Invalid dir specified {$baseDir}");
+		}
+	}
+
+	public function setOverrideDir($overrideDir)
+	{
+		if (!($this->overrideDir = realpath($this->baseDir . DIRECTORY_SEPARATOR . $overrideDir))) {
+			throw new \Exception("Invalid dir specified {$overrideDir}");
+		}
 	}
 
 	/**
