@@ -213,7 +213,7 @@ class AdvancedHttpRouter extends Object
 
 		$controller = $this->controller;
 		// Instantiate the controller if it is not static
-		if (strpos($this->method, '::') === FALSE) {
+		if (strpos($this->method, '::') === FALSE && class_exists($controller)) {
 			$controller = new $this->controller();
 		}
 
@@ -229,7 +229,7 @@ class AdvancedHttpRouter extends Object
 				exit;
 			}
 		}
-
+		
 		// This router object is always passed onto the final controller so that
 		// control can be passed back here or so that other non-linear flow can
 		// be accomplished.
