@@ -186,7 +186,7 @@ class Config
 			//
 			// Also, in the worst case scenario of all JSON files being empty,
 			// $configArray will never be an array (see above)
-			if (is_array($configArray) && !empty($configArray)) {
+			if (!empty($configArray) && is_array($configArray)) {
 				$this->config = array_replace_recursive($buf, $configArray);
 			}
 		}
