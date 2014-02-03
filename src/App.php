@@ -141,7 +141,7 @@ class App extends Object
 					throw new \Exception('You must provide routes for non-SimpleHttpRouter routing.');
 				}
 				foreach ($routes as $route) {
-					$this->router->addRoute($route[0], $route[1], $route[2], (isset($router[3]) ? $route[3] : NULL));
+					$this->router->addRoute($route[0], $route[1], $route[2], $route[3], (isset($router[4]) ? $route[4] : NULL));
 				}
 			}
 
