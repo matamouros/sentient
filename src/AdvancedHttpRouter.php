@@ -36,15 +36,15 @@ namespace Sentient;
  * their respective constraints, what controllers are associated with each
  * one and also extracting parameters from them.
  *
- * Routes are evaluated against a request URL by the order in which they are
- * added. Once a match is found, the flow is passed onto its controller, and
- * the route evaluation stops there. The AdvancedHttpRouter instance is
- * passed along to the used controller for convenience.
+ * Routes are evaluated against a set of HTTP verbs and a request URL, the latter
+ * by the order in which they are added. Once a match is found, the flow is passed
+ * onto its controller, andthe route evaluation stops there. The AdvancedHttpRouter
+ * instance is passed along to the used controller for convenience.
  * 
  * USAGE EXAMPLE #1:
  *     $router = new Sentient\AdvancedHttpRouter();
- *     $router->addRoute("/^\\/project\\/(\\w*)\\/(\\w*)/", "ProjectHttpController", "->$1", "$2");
- *     $router->addRoute("/^\\/$/", "HomeHttpController", "->index");
+ *     $router->addRoute("PUT, GET", /^\\/project\\/(\\w*)\\/(\\w*)/", "ProjectHttpController", "->$1", "$2");
+ *     $router->addRoute("*", "/^\\/$/", "HomeHttpController", "->index"); // Allows all HTTP verbs, same as ""
  *     $router->init();
  *     $router->run();
  *
@@ -54,7 +54,7 @@ namespace Sentient;
  *     $routes = $config->valueForKey('routes');
  *     $router = new Sentient\AdvancedHttpRouter();
  *     foreach ($routes as $route) {
- *         $router->addRoute($route[0], $route[1], $route[2], (isset($route[3]) ? $route[3] : NULL));
+ *         $router->addRoute($route[0], $route[1], $route[2], $route[3], (isset($route[4]) ? $route[4] : NULL));
  *     }
  *     $router->init();
  *     $router->run();
@@ -67,6 +67,9 @@ namespace Sentient;
  *
  * On addRoute(), the actual format of each of the parameters must however
  * respect the following:
+ *
+ * $verbs        A comma separated list of allowed HTTP verbs. You can specify an
+ *               empty string or "*" to allow all verbs.
  * 
  * $url          PCRE compatible regular expression, exactly like it is used with
  *               preg_match, for instance.
@@ -130,17 +133,23 @@ class AdvancedHttpRouter extends Object
 		// attributes. After the first match is found, route evaluation stops.
 		foreach ($this->routes as $route) {
 
+			// Enforce HTTP verb matching with what's specified on config (leave this iteration if no match)
+			if (!empty($route[0]) && strpos($route[0], '*') === FALSE && stripos($route[0], $_SERVER['REQUEST_METHOD']) === FALSE) {
+				// If there is a specific list of verbs, then we must enforce those
+				continue;
+			}
+			
 			// Not particularly pretty, but it's possibly the most efficient
 			// way of populating at once all the eventually possible placeholders
 			// present in controller, method and args. Since these are separate
 			// fields, we join them together for a preg_replace and then explode
 			// them again to their original state (already populate, if that's
 			// the case).
-			$toReplace = implode('<>', array($route[1], $route[2], $route[3]));
+			$toReplace = implode('<>', array($route[2], $route[3], $route[4]));
 
-			if (($replaced = preg_replace($route[0], $toReplace, $this->url)) != $this->url) {
-				// preg_replace returns the subject unchanged, if no match was
-				// found (instead of something like FALSE)
+			// preg_replace returns the subject unchanged, if no match was
+			// found (instead of something like FALSE)
+			if (($replaced = preg_replace($route[1], $toReplace, $this->url)) != $this->url) {
 
 				list ($this->controller, $this->method, $args) = explode('<>', $replaced);
 				if (!empty($args)) {
@@ -156,6 +165,9 @@ class AdvancedHttpRouter extends Object
 	/**
 	 * Allows a route to be added, along with its respective controller, method
 	 * and optional arguments.
+	 *
+	 * @param string verbs        A comma separated list of allowed HTTP verbs. You can specify an
+	 *                            empty string or "*" to allow all verbs.
 	 *
 	 * @param string $url         PCRE compatible regular expression, exactly like it is used with
 	 *                            preg_match, for instance.
@@ -174,9 +186,10 @@ class AdvancedHttpRouter extends Object
 	 *                            respectively, and the AdvancedHttpRouter instance will be the
 	 *                            first).
 	 */
-	public function addRoute($url, $controller, $method, $args = array())
+	public function addRoute($verbs, $url, $controller, $method, $args = array())
 	{
 		$this->routes[] = array(
+			$verbs,
 			$url,
 			$controller,
 			$method,
@@ -217,19 +230,20 @@ class AdvancedHttpRouter extends Object
 			$controller = new $this->controller();
 		}
 
-		if (!is_callable(array($controller, $method))) {
+		// We need method_exists here instead of is_callable, so as to not consider Object's __call()
+		if (!method_exists($controller, $method)) {
 			// The controller should have full control over this response, so we're
 			// refraining from spitting an HTTP 404 header down the wire here.
 			$method = 'http404';
 
-			if (!is_callable(array($controller, $method))) {
+			if (!method_exists($controller, $method)) {
 				header('HTTP/1.1 500 Internal Server Error');
 				flush();
 				throw new \Exception("No available method to serve the requested URL.");
 				exit;
 			}
 		}
-		
+
 		// This router object is always passed onto the final controller so that
 		// control can be passed back here or so that other non-linear flow can
 		// be accomplished.
