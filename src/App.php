@@ -40,8 +40,6 @@ namespace Sentient;
  */
 class App extends Object
 {
-	static private $instance;
-
 	protected $config;
 
 	protected $log;
@@ -62,11 +60,17 @@ class App extends Object
 	const CLI  = 'cli';
 	const HTML = 'html';
 
-	public function __construct()
+	private function __construct() {}
+
+	private function __clone() {}
+
+	static public function instance()
 	{
-		if (!(self::$instance instanceof App)) {
-			self::$instance = $this;
+		static $instance = NULL;
+		if ($instance === NULL) {
+			$instance = new App();
 		}
+		return $instance;
 	}
 
 	/**
