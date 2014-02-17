@@ -77,6 +77,7 @@ class HttpResponse extends Object
 	public function __construct()
 	{
 		$this->headers = array();
+		$this->payload = array();
 		$this->status = self::HTTP_INTERNAL_SERVER_ERROR;
 	}
 
