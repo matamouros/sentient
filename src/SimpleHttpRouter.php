@@ -140,6 +140,8 @@ class SimpleHttpRouter extends Object
 			}
 		}
 		
+		// The only reason why on here we don't just blindly invoke the delegate is
+		// that we really want to do different things on the case no http404 exists.
 		$this->fireDelegateMethod($method);
 	}
 }
