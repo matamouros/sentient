@@ -84,35 +84,48 @@ class Object
 		if (property_exists($this, $name)) {
 			return $this->$name;
 		}
-		elseif (strpos($name, 'set') === 0) {
+		elseif (strpos($name, 'set') === 0)
+		{
 			$key = lcfirst(substr($name, 3));
-			if ($this->$key != $args[0]) {
+			if ($this->$key != $args[0])
+			{
 				// automatically() is checked here only because we're using will/didChange
 				// as shortcut methods to implement auto notifications. But it's still
 				// auto notifications, hence the call to automatically()
-				if ($this->automaticallyNotifiesObserversForKey($key)) {
+				if ($this->automaticallyNotifiesObserversForKey($key))
+				{
 					$this->willChangeValueForKey($key);
 				}
 				$this->$key = $args[0];
-				if ($this->automaticallyNotifiesObserversForKey($key)) {
+				if ($this->automaticallyNotifiesObserversForKey($key))
+				{
 					$this->didChangeValueForKey($key);
 				}
 			}
 		}
 
-		elseif (strpos($name, 'is') === 0) {
+		elseif (strpos($name, 'is') === 0)
+		{
 			$key = lcfirst(substr($name, 2));
 			return (bool)$this->$key;
 		}
 
-		elseif (strpos($name, 'has') === 0) {
+		elseif (strpos($name, 'has') === 0)
+		{
 			$key = lcfirst(substr($name, 3));
 			return (bool)$this->$key;
 		}
 
-		elseif (strpos($name, 'empty') === 0) {
+		elseif (strpos($name, 'empty') === 0)
+		{
 			$key = lcfirst(substr($name, 5));
 			return empty($this->$key);
+		}
+
+		// Automatically call delegate, if available
+		elseif ($this->delegateRespondsToSelector($name))
+		{
+			$this->fireDelegateMethod($name, $args);
 		}
 
 		else {
