@@ -59,17 +59,18 @@ class Model extends Object
 	/**
 	 *
 	 */
-	public function __construct()
+	public function __construct($newPersistenceDelegate = NULL)
 	{
 		$this->signature = NULL;
 		$this->autoSave = FALSE;
 		$this->saveOnExit = TRUE;
 
-		static $db;
-		if ($db === NULL) {
-			$db = new Db();
+		static $localPersistenceDelegate;
+		if ($localPersistenceDelegate === NULL || !empty($newPersistenceDelegate)) {
+			$localPersistenceDelegate = $newPersistenceDelegate;
+			$localPersistenceDelegate->init();
 		}
-		$this->setDelegate($db);
+		$this->setDelegate($localPersistenceDelegate);
 	}
 
 	/**

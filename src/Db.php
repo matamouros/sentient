@@ -47,6 +47,17 @@ include 'vendor/adodb5/adodb-exceptions.inc.php';
  */
 class Db extends Object
 {
+	private $readerType;
+	private $readerHost;
+	private $readerUsername;
+	private $readerPassword;
+	private $readerName;
+	private $writerType;
+	private $writerHost;
+	private $writerUsername;
+	private $writerPassword;
+	private $writerName;
+
 	/**
 	 * @throws Exception
 	 */
@@ -57,8 +68,8 @@ class Db extends Object
 			//
 			// This might throw an exception
 			// 
-			$reader = ADONewConnection('mysqli');
-			$reader->Connect(DATABASE_HOSTNAME_READER,DATABASE_LOGIN_READER,DATABASE_PASSWORD_READER,DATABASE_NAME_READER);
+			$reader = ADONewConnection($this->readerType);
+			$reader->Connect($this->readerHost, $this->readerUsername, $this->readerPassword, $this->readerName);
 		}
 		return $reader;
 	}
@@ -73,8 +84,8 @@ class Db extends Object
 			//
 			// This might throw an exception
 			// 
-			$writer = ADONewConnection('mysqli');
-			$writer->Connect(DATABASE_HOSTNAME_WRITER,DATABASE_LOGIN_WRITER,DATABASE_PASSWORD_WRITER,DATABASE_NAME_WRITER);
+			$writer = ADONewConnection($this->writerType);
+			$writer->Connect($this->writerHost, $this->writerUsername, $this->writerPassword, $this->writerName);
 		}
 		return $writer;
 	}

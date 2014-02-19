@@ -60,7 +60,10 @@ class App extends Object
 	const CLI  = 'cli';
 	const HTML = 'html';
 
-	private function __construct() {}
+	private function __construct()
+	{
+		$this->router = NULL;
+	}
 
 	private function __clone() {}
 
@@ -102,55 +105,90 @@ class App extends Object
 			throw Exception("A running mode is required, one hasn't been provided.");
 		}
 
-		// Pull up the logging from configuration
+		// Bootstrap logging
+		$this->_initLog();
 
-		// Pull up routing
+		// Bootstrap database
+		$this->_initDb();
+
+		// Bootstrap routing
 		if ($this->mode == self::HTML || $this->mode == self::AJAX || $this->mode == self::API) {
-			$configRouting = $this->config->valueForKey('sentient.routing');
+			$this->_initRouting();
+		}
+	}
+
+	private function _initDb()
+	{
+		$db = new Db();
+
+		// Pull config values and feed them into Db
+		$db->setReaderHost($this->config->valueForKey('sentient.db.reader.connection.host'));
+		$db->setReaderUsername($this->config->valueForKey('sentient.db.reader.connection.username'));
+		$db->setReaderPassword($this->config->valueForKey('sentient.db.reader.connection.password'));
+		$db->setReaderName($this->config->valueForKey('sentient.db.reader.connection.name'));
+		$db->setReaderType($this->config->valueForKey('sentient.db.reader.connection.type'));
+
+		$db->setWriterHost($this->config->valueForKey('sentient.db.writer.connection.host'));
+		$db->setWriterUsername($this->config->valueForKey('sentient.db.writer.connection.username'));
+		$db->setWriterPassword($this->config->valueForKey('sentient.db.writer.connection.password'));
+		$db->setWriterName($this->config->valueForKey('sentient.db.writer.connection.name'));
+		$db->setWriterType($this->config->valueForKey('sentient.db.writer.connection.type'));
+
+		// For the purpose of feeding the database instance into Model
+		$dummyModel = new Model($db);
+	}
+
+	private function _initLog()
+	{
+
+	}
+
+	private function _initRouting()
+	{
+		$configRouting = $this->config->valueForKey('sentient.routing');
+
+		// Apparently PHP needs the namespace when using class_exists($class) or even $class()
+		$routerClass = '\Sentient\\' . $this->config->valueForKey('sentient.routing.router');
+
+		if (!class_exists($routerClass)) {
+			throw new \Exception("Valid router is required in config file for key 'sentient.routing.router'");
+		}
+
+		$this->router = new $routerClass();
+
+		//
+		// SimpleHttpRouter
+		//
+		if ($this->config->valueForKey('sentient.routing.router') == 'SimpleHttpRouter') {
+			
+			// A controller must be provided in sentient.routing.controller
+			$controllerClass = $this->config->valueForKey('sentient.routing.controller');
+			if (empty($controllerClass)) {
+				throw new \Exception("For SimpleHttpRouter a controller is required in the config file for key 'sentient.routing.controller'");
+			}
 
 			// Apparently PHP needs the namespace when using class_exists($class) or even $class()
-			$routerClass = '\Sentient\\' . $this->config->valueForKey('sentient.routing.router');
-
-			if (!class_exists($routerClass)) {
-				throw new \Exception("Valid router is required in config file for key 'sentient.routing.router'");
+			$controllerClass = 'Sentient\\' . $this->config->valueForKey('sentient.routing.controller');
+			if (!class_exists($controllerClass)) {
+				throw new \Exception("The controller provided in key 'sentient.routing.controller' was not found.");
 			}
 
-			$this->router = new $routerClass();
-
-			//
-			// SimpleHttpRouter
-			//
-			if ($this->config->valueForKey('sentient.routing.router') == 'SimpleHttpRouter') {
-				
-				// A controller must be provided in sentient.routing.controller
-				$controllerClass = $this->config->valueForKey('sentient.routing.controller');
-				if (empty($controllerClass)) {
-					throw new \Exception("For SimpleHttpRouter a controller is required in the config file for key 'sentient.routing.controller'");
-				}
-
-				// Apparently PHP needs the namespace when using class_exists($class) or even $class()
-				$controllerClass = 'Sentient\\' . $this->config->valueForKey('sentient.routing.controller');
-				if (!class_exists($controllerClass)) {
-					throw new \Exception("The controller provided in key 'sentient.routing.controller' was not found.");
-				}
-
-				$this->router->setDelegate(new $controllerClass());
-			}
-
-			//
-			// AdvancedHttpRouter or custom
-			//
-			else {
-				if (!($routes = $this->config->valueForKey('sentient.routing.routes'))) {
-					throw new \Exception('You must provide routes for non-SimpleHttpRouter routing.');
-				}
-				foreach ($routes as $route) {
-					$this->router->addRoute($route[0], $route[1], $route[2], $route[3], (isset($router[4]) ? $route[4] : NULL));
-				}
-			}
-
-			$this->router->init();
+			$this->router->setDelegate(new $controllerClass());
 		}
+
+		//
+		// AdvancedHttpRouter or custom
+		//
+		else {
+			if (!($routes = $this->config->valueForKey('sentient.routing.routes'))) {
+				throw new \Exception('You must provide routes for non-SimpleHttpRouter routing.');
+			}
+			foreach ($routes as $route) {
+				$this->router->addRoute($route[0], $route[1], $route[2], $route[3], (isset($router[4]) ? $route[4] : NULL));
+			}
+		}
+
+		$this->router->init();
 	}
 
 	public function run()
