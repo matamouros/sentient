@@ -30,8 +30,8 @@
 
 namespace Sentient;
 
-require 'vendor/adodb5/adodb.inc.php';
-include 'vendor/adodb5/adodb-exceptions.inc.php';
+require_once '../vendor/adodb5/adodb.inc.php';
+include_once '../vendor/adodb5/adodb-exceptions.inc.php';
 
 /**
  * 
@@ -47,16 +47,16 @@ include 'vendor/adodb5/adodb-exceptions.inc.php';
  */
 class Db extends Object
 {
-	private $readerType;
-	private $readerHost;
-	private $readerUsername;
-	private $readerPassword;
-	private $readerName;
-	private $writerType;
-	private $writerHost;
-	private $writerUsername;
-	private $writerPassword;
-	private $writerName;
+	protected $readerType;
+	protected $readerHost;
+	protected $readerUsername;
+	protected $readerPassword;
+	protected $readerName;
+	protected $writerType;
+	protected $writerHost;
+	protected $writerUsername;
+	protected $writerPassword;
+	protected $writerName;
 
 	/**
 	 * @throws Exception
