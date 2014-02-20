@@ -183,12 +183,7 @@ class Config
 			// above like it would seem better at first sight, because this gives
 			// us a chance of aborting the reload safely in case an error occurs
 			// on a configuration file.
-			//
-			// Also, in the worst case scenario of all JSON files being empty,
-			// $configArray will never be an array (see above)
-			if (!empty($configArray) && is_array($configArray)) {
-				$this->config = array_replace_recursive($buf, $configArray);
-			}
+			$this->config = array_replace_recursive($this->config, $buf);
 		}
 	}
 	
