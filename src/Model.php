@@ -68,7 +68,11 @@ class Model extends Object
 		static $localPersistenceDelegate;
 		if ($localPersistenceDelegate === NULL || !empty($newPersistenceDelegate)) {
 			$localPersistenceDelegate = $newPersistenceDelegate;
-			$localPersistenceDelegate->init();
+			// Run init() methods automatically
+			if (method_exists($localPersistenceDelegate, 'init'))
+			{
+				$localPersistenceDelegate->init();
+			}
 		}
 		$this->setDelegate($localPersistenceDelegate);
 	}
@@ -78,9 +82,18 @@ class Model extends Object
 	 */
 	public function __destruct()
 	{
-		if ($this->saveOnExit && (/*$this->_dirty || */$this->_isDirty()))
+		if ($this->saveOnExit && $this->_isDirty() && method_exists(get_called_class(), '_save'))
 		{
-			$this->_save();
+			//
+			// Late static binding at work here. Since Model is not abstract and does not enforce
+			// the existence of _save(), it's up to each derived class to implement it or not.
+			// With LSB, we are sure to call that derived class' _save(), instead of trying to
+			// call it on Model (where it doesn't exist).
+			//
+			// Since implementing _save() on the derived class is pretty much optional, we make
+			// sure it exists before it is called.
+			//
+			static::_save();
 		}
 	}
 
@@ -97,11 +110,16 @@ class Model extends Object
 				// Just call Object's setter to deal with it
 				parent::__call($name, $args);
 
-				if ($this->autoSave && $this->_save()) // Save automatically
+				// See above notes regarding LSB
+				if ($this->autoSave && method_exists(get_called_class(), '_save') && static::_save()) // Save automatically
 				{
 					$this->_sign(); // automatically update signature once saved
 				}
 			}
+		}
+		else
+		{
+			parent::__call($name, $args);
 		}
 	}
 
@@ -160,6 +178,4 @@ class Model extends Object
 		$objVars = array_diff(get_object_vars($this), $exclusions);
 		return md5(serialize($objVars));
 	}
-
-	abstract protected function _save() {}
 }
