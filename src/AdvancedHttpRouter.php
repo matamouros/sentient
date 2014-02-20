@@ -228,7 +228,11 @@ class AdvancedHttpRouter extends Object
 		// Instantiate the controller if it is not static
 		if (strpos($this->method, '::') === FALSE && class_exists($controller)) {
 			$controller = new $this->controller();
-			method_exists($controller, 'init'); // Run init() methods automatically
+			// Run init() methods automatically
+			if (method_exists($controller, 'init'))
+			{
+				$controller->init();
+			}
 		}
 
 		// We need method_exists here instead of is_callable, so as to not consider Object's __call()
