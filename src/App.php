@@ -60,12 +60,12 @@ class App extends Object
 	const CLI  = 'cli';
 	const HTML = 'html';
 
-	private function __construct()
+	public function __construct()
 	{
 		$this->router = NULL;
 	}
 
-	private function __clone() {}
+	public function __clone() {}
 
 	static public function instance()
 	{
