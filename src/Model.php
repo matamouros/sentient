@@ -55,6 +55,8 @@ class Model extends Object
 	/** */
 	private $saveOnExit;
 
+	//protected $db;
+
 
 	/**
 	 *
@@ -75,6 +77,13 @@ class Model extends Object
 			}
 		}
 		$this->setDelegate($localPersistenceDelegate);
+		/*
+		static $localPersistenceDelegate;
+		if ($localPersistenceDelegate === NULL || !empty($newPersistenceDelegate)) {
+			$localPersistenceDelegate = $newPersistenceDelegate;
+		}
+		$this->db = $localPersistenceDelegate;
+		*/
 	}
 
 	/**
@@ -119,7 +128,7 @@ class Model extends Object
 		}
 		else
 		{
-			parent::__call($name, $args);
+			return parent::__call($name, $args);
 		}
 	}
 
@@ -173,9 +182,14 @@ class Model extends Object
 			'delegate',   // Object
 			'outlets',    // Object
 			'observers',  // Object
+			'oldValues',  // Object
 		);
-		$exclusions = array_merge($defaultExclusions, $moreExclusions);
-		$objVars = array_diff(get_object_vars($this), $exclusions);
+		// This is flipped to maintain the $moreExclusions and $defaultExclusions easy
+		// to use, i.e., without having to specify indexes. So we flip the $exclusions
+		// here and then just compare using array_diff_key(), since get_object_vars()
+		// will always return an array with the instance's properties names as keys.
+		$exclusions = array_flip(array_merge($defaultExclusions, $moreExclusions));
+		$objVars = array_diff_key(get_object_vars($this), $exclusions);
 		return md5(serialize($objVars));
 	}
 }
