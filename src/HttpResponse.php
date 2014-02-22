@@ -47,6 +47,7 @@ class HttpResponse extends Object
 	const HTTP_REDIRECT_PERM         = 301;
 	const HTTP_REDIRECT_FOUND        = 302;
 	const HTTP_BAD_REQUEST           = 400;
+	const HTTP_UNAUTHORIZED          = 401;
 	const HTTP_CONFLICT              = 409;
 	const HTTP_EXPECTACTION_FAILED   = 417;
 	const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -68,6 +69,7 @@ class HttpResponse extends Object
 		self::HTTP_REDIRECT_PERM         => 'Moved Permanently',
 		self::HTTP_REDIRECT_FOUND        => 'Found',
 		self::HTTP_BAD_REQUEST           => 'Bad Request',
+		self::HTTP_UNAUTHORIZED          => 'Unauthorized',
 		self::HTTP_CONFLICT              => 'Conflict',
 		self::HTTP_EXPECTACTION_FAILED   => 'Expectation Failed',
 		self::HTTP_INTERNAL_SERVER_ERROR => 'Internal Server Error',
