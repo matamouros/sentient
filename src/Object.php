@@ -125,7 +125,7 @@ class Object
 		// Automatically call delegate, if available
 		elseif ($this->delegateRespondsToSelector($name))
 		{
-			$this->fireDelegateMethod($name, $args);
+			return $this->fireDelegateMethod($name, $args);
 		}
 
 		else {
