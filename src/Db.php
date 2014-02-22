@@ -32,6 +32,10 @@ namespace Sentient;
 
 require_once '../vendor/adodb5/adodb.inc.php';
 include_once '../vendor/adodb5/adodb-exceptions.inc.php';
+//
+// Use only associative arrays. Must be global scope for ADOdb to catch it
+//
+$ADODB_FETCH_MODE = ADODB_FETCH_ASSOC;
 
 /**
  * 
@@ -107,7 +111,7 @@ class Db extends Object
 	 *
 	 * @return bool TRUE or FALSE.
 	 */
-	public function execute($query, $values = NULL)
+	public function execute($o, $query, array $values = NULL)
 	{
 		$result = FALSE;
 		$writer = $this->_getWriter();
@@ -118,7 +122,7 @@ class Db extends Object
 		}
 		catch (Exception $e)
 		{
-			
+			//print (__METHOD__ . ': error! [ERRNO='.$dbWriter->ErrorNo().'] [ERRMSG='.$dbWriter->ErrorMsg().'] [QUERY='.$query.']'.(!empty($values)?' [VALUES='.$tmp.']':''));
 		}
 		
 		return ((bool)$result);
@@ -142,7 +146,7 @@ class Db extends Object
 	 * have auto-numbering on, the id string "0" is returned! Be sure to check
 	 * this using the === operator.
 	 */
-	public static function insert($query, $values = NULL)
+	public function insert($o, $query, array $values = NULL)
 	{
 		$result = FALSE;
 		$writer = $this->_getWriter();
@@ -186,7 +190,7 @@ class Db extends Object
 	 *
 	 * @return bool|Object FALSE or the result set of the query performed
 	 */
-	public static function query($query, $values = NULL)
+	public function query($o, $query, array $values = NULL)
 	{
 		$result = FALSE;
 		$reader = $this->_getReader();
@@ -199,7 +203,7 @@ class Db extends Object
 		{
 
 		}
-		
+
 		return $result;
 	}
 
@@ -216,5 +220,15 @@ class Db extends Object
 	public function transactionFail()
 	{
 
+	}
+
+	protected function _populateInstance($o, $instance, $rs)
+	{
+		foreach ($rs->fields as $key => $val)
+		{
+			$setter = "set{$key}";
+			$instance->$setter($val);
+		}
+		return $instance;
 	}
 }
