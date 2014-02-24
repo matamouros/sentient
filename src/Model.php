@@ -47,13 +47,13 @@ class Model extends Object
 	/**
 	 * Last known digest of the instance.
 	 */
-	private $signature;
+	protected $signature;
 
 	/** */
-	private $autoSave;
+	protected $autoSave;
 
 	/** */
-	private $saveOnExit;
+	protected $saveOnExit;
 
 	//protected $db;
 
@@ -65,7 +65,7 @@ class Model extends Object
 	{
 		$this->signature = NULL;
 		$this->autoSave = FALSE;
-		$this->saveOnExit = TRUE;
+		$this->saveOnExit = FALSE; // Make sure you know what you're doing if you turn this on
 
 		static $localPersistenceDelegate;
 		if ($localPersistenceDelegate === NULL || !empty($newPersistenceDelegate)) {
@@ -84,6 +84,8 @@ class Model extends Object
 		}
 		$this->db = $localPersistenceDelegate;
 		*/
+
+		$this->_sign();
 	}
 
 	/**
@@ -114,6 +116,10 @@ class Model extends Object
 		if (strpos($name, 'set') === 0)
 		{
 			$key = lcfirst(substr($name, 3));
+			if (!property_exists(get_called_class(), $key))
+			{
+				throw new \Exception("No property '{$key}' available for setting on " . get_called_class());
+			}
 			if ($this->$key != $args[0])
 			{
 				// Just call Object's setter to deal with it
@@ -151,6 +157,29 @@ class Model extends Object
 	public function sleep()
 	{
 		
+	}
+
+	/**
+	 * Populates $this' attributes with the values passed. The keys on
+	 * the $attributes parameter must match instance properties. NOTE: we don't
+	 * want Type Hinting on here because we don't want to have every single
+	 * caller of this method to check that a proper array is passed to here.
+	 */
+	public function populateInstance($attributes = array())
+	{
+		if (is_array($attributes))
+		{
+			foreach ($attributes as $key => $val)
+			{
+				// Only automatically set the properties that exist
+				if (property_exists(get_called_class(), $key))
+				{
+					$setter = "set{$key}";
+					static::$setter($val);
+				}
+			}
+			$this->_sign();
+		}
 	}
 
 	/**
