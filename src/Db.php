@@ -221,14 +221,4 @@ class Db extends Object
 	{
 
 	}
-
-	protected function _populateInstance($o, $instance, $rs)
-	{
-		foreach ($rs->fields as $key => $val)
-		{
-			$setter = "set{$key}";
-			$instance->$setter($val);
-		}
-		return $instance;
-	}
 }
