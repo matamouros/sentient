@@ -87,6 +87,10 @@ class Object
 		elseif (strpos($name, 'set') === 0)
 		{
 			$key = lcfirst(substr($name, 3));
+			if (!property_exists(get_called_class(), $key))
+			{
+				throw new \Exception("No property '{$key}' available for setting on " . __CLASS__);
+			}
 			if ($this->$key != $args[0])
 			{
 				// automatically() is checked here only because we're using will/didChange
@@ -107,18 +111,30 @@ class Object
 		elseif (strpos($name, 'is') === 0)
 		{
 			$key = lcfirst(substr($name, 2));
+			if (!property_exists(get_called_class(), $key))
+			{
+				throw new \Exception("No property '{$key}' available for checking on " . __CLASS__);
+			}
 			return (bool)$this->$key;
 		}
 
 		elseif (strpos($name, 'has') === 0)
 		{
 			$key = lcfirst(substr($name, 3));
+			if (!property_exists(get_called_class(), $key))
+			{
+				throw new \Exception("No property '{$key}' available for checking on " . __CLASS__);
+			}
 			return (bool)$this->$key;
 		}
 
 		elseif (strpos($name, 'empty') === 0)
 		{
 			$key = lcfirst(substr($name, 5));
+			if (!property_exists(get_called_class(), $key))
+			{
+				throw new \Exception("No property '{$key}' available for checking on " . __CLASS__);
+			}
 			return empty($this->$key);
 		}
 
