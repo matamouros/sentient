@@ -30,8 +30,8 @@
 
 namespace Sentient;
 
-require_once '../vendor/adodb5/adodb.inc.php';
-include_once '../vendor/adodb5/adodb-exceptions.inc.php';
+//require_once '../vendor/adodb5/adodb.inc.php';
+//include_once '../vendor/adodb5/adodb-exceptions.inc.php';
 //
 // Use only associative arrays. Must be global scope for ADOdb to catch it
 //
