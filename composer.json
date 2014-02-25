@@ -6,9 +6,6 @@
 			"email": "pedro.matamouros@gmail.com"
 		}
 	],
-    "autoload": {
-        "psr-4": {"Sentient\\": "src/"}
-    },
 	"repositories" : [
 		{
 			"type": "package",
@@ -30,6 +27,9 @@
 			}
 		}
 	],
+	"autoload": {
+        "psr-4": {"Sentient\\": "src/"}
+    },
 	"require": {
 		"adodb": "5.18a"
 	}
