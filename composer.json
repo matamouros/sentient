@@ -8,5 +8,29 @@
 	],
     "autoload": {
         "psr-4": {"Sentient\\": "src/"}
-    }
+    },
+	"repositories" : [
+		{
+			"type": "package",
+			"package": {
+				"name": "adodb",
+				"version": "5.18a",
+				"source": {
+					"type": "git",
+					"url": "git@github.com:ADOdb/ADOdb.git",
+					"reference": "refs/tags/v5.18a"
+				},
+				"support" : { "forum" : "http://phplens.com/lens/lensforum/topics.php?id=4" },
+				"require" : {
+					"php" : ">=5.3.2"
+				},
+				"autoload": {
+					"files" : ["phplens/adodb5/adodb.inc.php"]
+				}
+			}
+		}
+	],
+	"require": {
+		"adodb": "5.18a"
+	}
 }
